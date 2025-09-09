@@ -3,59 +3,796 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>자기소개</title>
+    <title>멘토링 데이터 처리기</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 40px;
             line-height: 1.6;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            background-color: #f9f9f9;
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
         }
-        h1 {
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .upload-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .progress-text {
+            font-size: 1rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .result-container {
+            display: none;
+            margin-top: 30px;
+            padding: 25px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .result-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .download-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .error-message {
+            color: #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #dc3545;
+            display: none;
+        }
+
+        .tab-list {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .tab-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+
+        .tab-item:last-child {
+            border-bottom: none;
+        }
+
+        .tab-name {
+            font-weight: 500;
             color: #333;
         }
-        .profile-pic {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
+
+        .tab-count {
+            color: #666;
+            font-size: 0.8rem;
         }
-        .contact-info {
-            margin-top: 20px;
+
+        .anomaly-tab {
+            background-color: #fff3cd;
+            border-left: 3px solid #ffc107;
+            padding-left: 5px;
         }
-        .contact-info h3 {
-            margin-bottom: 5px;
+
+        .anomaly-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 15px;
+            text-align: left;
+            font-size: 0.9rem;
+            color: #856404;
         }
-        .contact-info p {
-            margin: 0;
+
+        .new-upload-btn {
+            background: linear-gradient(45deg, #6c757d, #5a6268);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .new-upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+            
+            .upload-area {
+                padding: 40px 15px;
+            }
+            
+            .result-stats {
+                grid-template-columns: 1fr 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>자기소개</h1>
-               <h2>안녕하세요, 저는 추제근입니다.</h2>
-        <p>저는 23살 대학생이고, 집에가고 싶습니다.</p>
+        <h1 class="title">멘토링 데이터 처리기</h1>
+        <p class="subtitle">원본 엑셀 파일을 업로드하면 지역/학교급/월별로 정리된 파일과 활동비 계산서를 자동으로 생성해드립니다.</p>
         
-        <h2>취미</h2>
-        <ul>
-            <li>당구</li>
-            <li>농구</li>
-            <li>게임</li>
-        </ul>
-
-        <div class="contact-info">
-            <h3>연락처</h3>
-            <p>Email: <a href="mailto:cnwprms@naver.com">cnwprms@naver.com</a></p>
-            <p>Phone: 01058090304</p>
+        <div class="upload-area" id="uploadArea">
+            <span class="upload-icon">📊</span>
+            <div class="upload-text">엑셀 파일을 여기에 드롭하거나 클릭하세요</div>
+            <div class="upload-subtext">.xlsx, .xls 파일만 지원됩니다</div>
+            <button class="upload-btn">
+                파일 선택하기
+            </button>
+            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls" />
         </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">처리 중...</div>
+        </div>
+
+        <div class="result-container" id="resultContainer">
+            <div class="result-title">처리 완료!</div>
+            <div class="result-stats" id="resultStats"></div>
+            <div class="anomaly-info" id="anomalyInfo" style="display: none;"></div>
+            <div class="tab-list" id="tabList"></div>
+            <button class="download-btn" id="downloadBtn">
+                📥 정리된 파일 다운로드
+            </button>
+            <button class="new-upload-btn" id="newUploadBtn">
+                📁 새 파일 업로드
+            </button>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
     </div>
+
+    <script>
+        let processedWorkbook = null;
+        
+        // 파일 업로드 이벤트 설정
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const progressContainer = document.getElementById('progressContainer');
+        const resultContainer = document.getElementById('resultContainer');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // 드래그 앤 드롭 기능
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                showError('Excel 파일(.xlsx, .xls)만 업로드 가능합니다.');
+                return;
+            }
+
+            hideError();
+            showProgress();
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    processExcelFile(e.target.result);
+                } catch (error) {
+                    console.error('파일 처리 오류:', error);
+                    showError('파일 처리 중 오류가 발생했습니다: ' + error.message);
+                    hideProgress();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processExcelFile(arrayBuffer) {
+            updateProgress(20, '파일 읽는 중...');
+            
+            // Excel 파일 읽기
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            updateProgress(40, '데이터 파싱 중...');
+            
+            // JSON으로 변환
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            
+            updateProgress(60, '데이터 정리 중...');
+            
+            // 데이터 처리 및 그룹핑
+            const processedData = processData(jsonData);
+            
+            updateProgress(80, '엑셀 파일 생성 중...');
+            
+            // 새 워크북 생성
+            processedWorkbook = createProcessedWorkbook(processedData);
+            
+            updateProgress(100, '완료!');
+            
+            // 결과 표시
+            setTimeout(() => {
+                hideProgress();
+                showResults(processedData);
+            }, 500);
+        }
+
+        // 학교명이 정상인지 체크하는 함수
+        function isValidSchoolName(schoolName) {
+            if (!schoolName || schoolName.trim() === '') {
+                return false;
+            }
+            
+            const school = String(schoolName).trim();
+            
+            // 과목 관련 키워드 체크
+            const subjectKeywords = ['국어', '영어', '수학', '과학', '사회', '역사', '물리', '화학', '생물', 
+                                    '지구과학', '정보', '기술', '가정', '미술', '음악', '체육', '도덕', 
+                                    '윤리', '한문', '일본어', '중국어', '프랑스어', '독일어', '스페인어'];
+            
+            // 과목 키워드만 있고 학교 키워드가 없는 경우
+            const hasSubject = subjectKeywords.some(subject => school.includes(subject));
+            const hasSchoolKeyword = school.includes('학교') || school.includes('고등') || school.includes('중학') || 
+                                    school.includes('초등') || school.includes('대학');
+            
+            // 과목명만 있거나 빈값인 경우 false 반환
+            if (hasSubject && !hasSchoolKeyword) {
+                return false;
+            }
+            
+            // 학교 키워드가 하나도 없는 경우도 이상치로 처리
+            if (!hasSchoolKeyword) {
+                return false;
+            }
+            
+            return true;
+        }
+
+        function processData(data) {
+            const groupedData = {};
+            let totalRows = 0;
+            let anomalyCount = 0;
+
+            data.forEach(row => {
+                try {
+                    // 학교명 체크 (멘티 추가정보1 필드 사용)
+                    const schoolInfo = row['멘티 추가정보1'];
+                    const isValidSchool = isValidSchoolName(schoolInfo);
+
+                    const mentorTime = row['멘토 체류시간(분)'];
+                    const menteeTime = row['멘티 체류시간(분)'];
+                    const isValidTime = isValidTimeData(mentorTime, menteeTime);
+                    
+                    // 이상치 데이터는 별도 탭으로
+                    if (!isValidSchool || !isValidTime) {
+                        const tabName = '이상치';
+                        
+                        if (!groupedData[tabName]) {
+                            groupedData[tabName] = [];
+                        }
+                        
+                        // 인정 값 계산
+                        const tutorStayTime = parseInt(row['멘토 체류시간(분)']) || 0;
+                        const feedback = row['멘토의 멘티 피드백'] || '';
+                        const recognition = calculateRecognition(tutorStayTime, feedback);
+                        
+                        // 데이터 정리
+                        const processedRow = {
+                            '멘토': row['멘토명'] || '',
+                            '멘티': row['멘티 이름'] || '',
+                            '학교정보(원본)': schoolInfo || '(빈값)',
+                            '수업일': row['시작일자(평가일시)'] || '',
+                            '시작시간': row['시작시간'] || '',
+                            '종료시간': row['종료시간'] || '',
+                            '수업시간': row['수업진행 시간(분)'] || '',
+                            '튜터체류시간': row['멘토 체류시간(분)'] || '',
+                            '튜티체류시간': row['멘티 체류시간(분)'] || '',
+                            '인정': recognition,
+                            '피드백': row['멘토의 멘티 피드백'] || '',
+                            '완료보고': row['강의 보고서'] || '',
+                            '기타': '',
+                            '기타2': '',
+                            '증빙': '',
+                            '문제풀이 수': row['멘티 문제 풀이 수'] || '',
+                            '정답 수': row['멘티 정답 수'] || ''
+                        };
+                        
+                        groupedData[tabName].push(processedRow);
+                        anomalyCount++;
+                    } else {
+                        // 정상 데이터 처리
+                        // 지역 추출 (예: "청양군" -> "청양")
+                        const region = row['지역 구분'] ? row['지역 구분'].replace('군', '').replace('시', '') : '기타';
+                        
+                        // 학교급 구분
+                        const schoolType = String(schoolInfo).includes('중') ? '중등' : '고등';
+                        
+                        // 월 추출
+                        const startDate = new Date(row['시작일자(평가일시)']);
+                        const month = startDate.getMonth() + 1;
+                        
+                        // 탭 이름 생성
+                        const tabName = `${region}(${schoolType}) ${month}월`;
+                        
+                        if (!groupedData[tabName]) {
+                            groupedData[tabName] = [];
+                        }
+                        
+                        // 인정 값 계산
+                        const tutorStayTime = parseInt(row['멘토 체류시간(분)']) || 0;
+                        const feedback = row['멘토의 멘티 피드백'] || '';
+                        const recognition = calculateRecognition(tutorStayTime, feedback);
+                        
+                        // 데이터 정리
+                        const processedRow = {
+                            '멘토': row['멘토명'] || '',
+                            '멘티': row['멘티 이름'] || '',
+                            '수업일': row['시작일자(평가일시)'] || '',
+                            '시작시간': row['시작시간'] || '',
+                            '종료시간': row['종료시간'] || '',
+                            '수업시간': row['수업진행 시간(분)'] || '',
+                            '튜터체류시간': row['멘토 체류시간(분)'] || '',
+                            '튜티체류시간': row['멘티 체류시간(분)'] || '',
+                            '인정': recognition,
+                            '피드백': row['멘토의 멘티 피드백'] || '',
+                            '완료보고': row['강의 보고서'] || '',
+                            '기타': '',
+                            '기타2': '',
+                            '증빙': '',
+                            '문제풀이 수': row['멘티 문제 풀이 수'] || '',
+                            '정답 수': row['멘티 정답 수'] || ''
+                        };
+                        
+                        groupedData[tabName].push(processedRow);
+                    }
+                    
+                    totalRows++;
+                } catch (error) {
+                    console.error('행 처리 오류:', error, row);
+                }
+            });
+            
+            return { groupedData, totalRows, anomalyCount };
+        }
+
+        function calculateRecognition(tuteeStayTime, completionReport) {
+            if (!completionReport || completionReport.trim() === '' || !tuteeStayTime || tuteeStayTime === '') {
+                return 0;
+            }
+            
+            if (tuteeStayTime >= 110) return 2;
+            if (tuteeStayTime >= 90) return 1.5;
+            if (tuteeStayTime >= 50) return 1;
+            if (tuteeStayTime >= 30) return 0.5;
+            return 0;
+        }
+
+        function createProcessedWorkbook(processedData) {
+            const { groupedData } = processedData;
+            const workbook = XLSX.utils.book_new();
+            
+            // 이상치 탭을 먼저 생성
+            if (groupedData['이상치'] && groupedData['이상치'].length > 0) {
+                const worksheet = XLSX.utils.json_to_sheet(groupedData['이상치']);
+                XLSX.utils.book_append_sheet(workbook, worksheet, '이상치');
+                
+                // 이상치 탭의 활동비도 생성
+                const mentorSummary = {};
+                groupedData['이상치'].forEach(row => {
+                    const mentor = row['멘토'];
+                    const recognition = parseFloat(row['인정']) || 0;
+                    
+                    if (!mentorSummary[mentor]) {
+                        mentorSummary[mentor] = 0;
+                    }
+                    mentorSummary[mentor] += recognition;
+                });
+                
+                const activityData = Object.keys(mentorSummary).map(mentor => ({
+                    '멘토': mentor,
+                    '인정횟수': mentorSummary[mentor],
+                    '금액 (회당 20,000)': mentorSummary[mentor] * 20000
+                }));
+                
+                if (activityData.length > 0) {
+                    const activitySheet = XLSX.utils.json_to_sheet(activityData);
+                    XLSX.utils.book_append_sheet(workbook, activitySheet, '이상치 - 활동비');
+                }
+            }
+            
+            // 나머지 정상 탭들 생성
+            Object.keys(groupedData).forEach(tabName => {
+                if (tabName !== '이상치') {
+                    const worksheet = XLSX.utils.json_to_sheet(groupedData[tabName]);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, tabName);
+                }
+            });
+            
+            // 정상 탭들의 활동비 탭 생성
+            Object.keys(groupedData).forEach(tabName => {
+                if (tabName !== '이상치') {
+                    const mentorSummary = {};
+                    
+                    // 멘토별 인정횟수 합계 계산
+                    groupedData[tabName].forEach(row => {
+                        const mentor = row['멘토'];
+                        const recognition = parseFloat(row['인정']) || 0;
+                        
+                        if (!mentorSummary[mentor]) {
+                            mentorSummary[mentor] = 0;
+                        }
+                        mentorSummary[mentor] += recognition;
+                    });
+                    
+                    // 활동비 데이터 생성
+                    const activityData = Object.keys(mentorSummary).map(mentor => ({
+                        '멘토': mentor,
+                        '인정횟수': mentorSummary[mentor],
+                        '금액 (회당 20,000)': mentorSummary[mentor] * 20000
+                    }));
+                    
+                    if (activityData.length > 0) {
+                        const activitySheet = XLSX.utils.json_to_sheet(activityData);
+                        XLSX.utils.book_append_sheet(workbook, activitySheet, `${tabName} - 활동비`);
+                    }
+                }
+            });
+            
+            return workbook;
+        }
+
+        function showResults(processedData) {
+            const { groupedData, totalRows, anomalyCount } = processedData;
+            
+            // 통계 표시
+            const tabCount = Object.keys(groupedData).length;
+            const normalTabCount = tabCount - (groupedData['이상치'] ? 1 : 0);
+            const activityTabCount = tabCount; // 활동비 탭 개수는 기본 탭과 동일
+            const totalTabs = tabCount * 2; // 기본 탭 + 활동비 탭
+            
+            document.getElementById('resultStats').innerHTML = `
+                <div class="stat-item">
+                    <span class="stat-number">${totalRows}</span>
+                    <div class="stat-label">총 데이터</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">${normalTabCount}</span>
+                    <div class="stat-label">정상 탭</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">${anomalyCount}</span>
+                    <div class="stat-label">이상치 데이터</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">${totalTabs}</span>
+                    <div class="stat-label">전체 탭</div>
+                </div>
+            `;
+            
+            // 이상치 정보 표시
+            if (anomalyCount > 0) {
+                const anomalyInfo = document.getElementById('anomalyInfo');
+                anomalyInfo.innerHTML = `
+                    ⚠️ <strong>이상치 데이터 ${anomalyCount}건 발견</strong><br>
+                    학교명 오류 또는 멘티 시간이 멘토 시간보다 10분 초과한 데이터를 '이상치' 탭으로 분리했습니다.
+                `;
+                anomalyInfo.style.display = 'block';
+            }
+            
+            // 탭 목록 표시
+            let tabListHTML = '';
+            
+            // 이상치 탭을 먼저 표시
+            if (groupedData['이상치']) {
+                const count = groupedData['이상치'].length;
+                tabListHTML += `
+                    <div class="tab-item anomaly-tab">
+                        <span class="tab-name">⚠️ 이상치</span>
+                        <span class="tab-count">${count}개 데이터</span>
+                    </div>
+                `;
+            }
+            
+            // 정상 탭들 표시
+            Object.keys(groupedData).forEach(tabName => {
+                if (tabName !== '이상치') {
+                    const count = groupedData[tabName].length;
+                    tabListHTML += `
+                        <div class="tab-item">
+                            <span class="tab-name">${tabName}</span>
+                            <span class="tab-count">${count}개 데이터</span>
+                        </div>
+                        <div class="tab-item">
+                            <span class="tab-name">${tabName} - 활동비</span>
+                            <span class="tab-count">멘토별 활동비</span>
+                        </div>
+                    `;
+                }
+            });
+            
+            document.getElementById('tabList').innerHTML = tabListHTML;
+            
+            resultContainer.style.display = 'block';
+        }
+
+        // 다운로드 버튼 이벤트
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (processedWorkbook) {
+                const today = new Date();
+                const dateStr = today.getFullYear() + '-' + 
+                               String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                               String(today.getDate()).padStart(2, '0');
+                
+                XLSX.writeFile(processedWorkbook, `멘토링_정리_데이터_${dateStr}.xlsx`);
+            }
+        });
+
+        // 새 파일 업로드 버튼 이벤트
+        document.getElementById('newUploadBtn').addEventListener('click', () => {
+            // 모든 상태 초기화
+            uploadArea.style.display = 'block';
+            resultContainer.style.display = 'none';
+            hideError();
+            hideProgress();
+            fileInput.value = '';
+            processedWorkbook = null;
+            document.getElementById('anomalyInfo').style.display = 'none';
+        });
+
+        function showProgress() {
+            progressContainer.style.display = 'block';
+            resultContainer.style.display = 'none';
+        }
+
+        function hideProgress() {
+            progressContainer.style.display = 'none';
+        }
+
+        function updateProgress(percent, text) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = text;
+       }
+
+       function showError(message) {
+           errorMessage.textContent = message;
+           errorMessage.style.display = 'block';
+           resultContainer.style.display = 'none';
+       }
+
+       function hideError() {
+           errorMessage.style.display = 'none';
+       }
+
+       // 시간 데이터가 정상인지 체크하는 함수
+        function isValidTimeData(mentorTime, menteeTime) {
+            const mentorMinutes = parseInt(mentorTime) || 0;
+            const menteeMinutes = parseInt(menteeTime) || 0;
+            
+            // 멘티 시간이 멘토 시간보다 10분 초과하면 이상치
+            if (menteeMinutes > mentorMinutes + 10) {
+                return false;
+            }
+            
+            return true;
+        }
+   </script>
 </body>
 </html>
