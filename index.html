@@ -588,36 +588,13 @@
         function createProcessedWorkbook(processedData) {
             const { groupedData } = processedData;
             const workbook = XLSX.utils.book_new();
-            
-            // 이상치 탭을 먼저 생성
+
+            // 이상치 탭은 데이터만 생성 (활동비 시트 없음)
             if (groupedData['이상치'] && groupedData['이상치'].length > 0) {
                 const worksheet = XLSX.utils.json_to_sheet(groupedData['이상치']);
                 XLSX.utils.book_append_sheet(workbook, worksheet, '이상치');
-                
-                // 이상치 탭의 활동비도 생성
-                const mentorSummary = {};
-                groupedData['이상치'].forEach(row => {
-                    const mentor = row['멘토'];
-                    const recognition = parseFloat(row['인정']) || 0;
-                    
-                    if (!mentorSummary[mentor]) {
-                        mentorSummary[mentor] = 0;
-                    }
-                    mentorSummary[mentor] += recognition;
-                });
-                
-                const activityData = Object.keys(mentorSummary).map(mentor => ({
-                    '멘토': mentor,
-                    '인정횟수': mentorSummary[mentor],
-                    '금액 (회당 20,000)': mentorSummary[mentor] * 20000
-                }));
-                
-                if (activityData.length > 0) {
-                    const activitySheet = XLSX.utils.json_to_sheet(activityData);
-                    XLSX.utils.book_append_sheet(workbook, activitySheet, '이상치 - 활동비');
-                }
             }
-            
+
             // 나머지 정상 탭들 생성
             Object.keys(groupedData).forEach(tabName => {
                 if (tabName !== '이상치') {
@@ -625,37 +602,39 @@
                     XLSX.utils.book_append_sheet(workbook, worksheet, tabName);
                 }
             });
-            
-            // 정상 탭들의 활동비 탭 생성
+
+            // 정상 탭들의 활동비 탭 생성 (학교급별 단가 적용)
             Object.keys(groupedData).forEach(tabName => {
                 if (tabName !== '이상치') {
                     const mentorSummary = {};
-                    
-                    // 멘토별 인정횟수 합계 계산
+
                     groupedData[tabName].forEach(row => {
                         const mentor = row['멘토'];
                         const recognition = parseFloat(row['인정']) || 0;
-                        
+
                         if (!mentorSummary[mentor]) {
                             mentorSummary[mentor] = 0;
                         }
                         mentorSummary[mentor] += recognition;
                     });
-                    
-                    // 활동비 데이터 생성
+
+                    // ★ 학교급별 단가: 중등 18,000 / 고등 20,000
+                    const rate = tabName.includes('(중등)') ? 18000 : 20000;
+                    const rateLabel = `금액 (회당 ${rate.toLocaleString()})`;
+
                     const activityData = Object.keys(mentorSummary).map(mentor => ({
                         '멘토': mentor,
                         '인정횟수': mentorSummary[mentor],
-                        '금액 (회당 20,000)': mentorSummary[mentor] * 20000
+                        [rateLabel]: mentorSummary[mentor] * rate
                     }));
-                    
+
                     if (activityData.length > 0) {
                         const activitySheet = XLSX.utils.json_to_sheet(activityData);
                         XLSX.utils.book_append_sheet(workbook, activitySheet, `${tabName} - 활동비`);
                     }
                 }
             });
-            
+
             return workbook;
         }
 
